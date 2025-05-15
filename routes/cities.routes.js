@@ -1,3 +1,4 @@
+// routes/cities.routes.js
 const express = require("express");
 const router = express.Router();
 const { getAllCities } = require("../controllers/city.controller");
