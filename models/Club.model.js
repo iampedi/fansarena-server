@@ -17,15 +17,28 @@ const ClubSchema = new Schema(
       index: true,
     },
 
-    city: {
-      type: Schema.Types.ObjectId,
-      ref: "City",
+    continent: {
+      type: String,
+      lowercase: true,
       required: true,
+      enum: [
+        "asia",
+        "europe",
+        "africa",
+        "north america",
+        "south america",
+        "oceania",
+      ],
     },
 
     country: {
       type: Schema.Types.ObjectId,
       ref: "Country",
+      required: true,
+    },
+
+    city: {
+      type: String,
       required: true,
     },
 

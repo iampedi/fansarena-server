@@ -1,22 +1,33 @@
 const Club = require("../models/Club.model");
 
-// ایجاد یک باشگاه جدید
+// Create a new club
 exports.createClub = async (req, res) => {
   try {
     const club = new Club(req.body);
     await club.save();
     res.status(201).json(club);
   } catch (err) {
+    // Check for duplicate key error
+    if (err.code === 11000) {
+      return res.status(400).json({
+        error: `${req.body.name} Club already exists.`,
+      });
+    }
+    // Other errors
     res.status(400).json({ error: err.message });
   }
 };
 
-// گرفتن لیست باشگاه‌ها
+// Get all clubs
 exports.getAllClubs = async (req, res) => {
   try {
-    const clubs = await Club.find()
-      .populate("country", "name") // فقط نام کشور
-      .populate("city", "name"); // فقط نام شهر
+    const { continent, country } = req.query;
+
+    const query = {};
+    if (continent) query.continent = continent;
+    if (country) query.country = country;
+
+    const clubs = await Club.find(query).populate("country", "name");
     res.json(clubs);
   } catch (err) {
     res.status(500).json({ error: err.message });
