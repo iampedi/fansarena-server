@@ -6,10 +6,14 @@ require("./db");
 
 // Import and initialize Express application
 const express = require("express");
+const { authenticate } = require("./middleware/auth");
 const app = express();
 
 // Apply global middleware configuration (e.g., logger, body parser, CORS)
 require("./config")(app);
+
+// Define AUTH routes
+app.use("/auth", require("./routes/auth.routes"));
 
 // Define API routes
 app.use("/api/clubs", require("./routes/clubs.routes"));
