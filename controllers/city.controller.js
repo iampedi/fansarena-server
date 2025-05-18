@@ -19,14 +19,17 @@ exports.getAllCities = async (req, res) => {
     const cities = await City.find(query)
       .populate("country", "name code")
       .sort("name")
-      .skip((page - 1) * limit)
+      .skip((parseInt(page) - 1) * parseInt(limit))
       .limit(parseInt(limit));
 
     res.json({
       data: cities,
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (err) {
     console.error("Error fetching cities:", err);
