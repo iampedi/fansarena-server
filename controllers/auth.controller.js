@@ -125,3 +125,18 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: "Internal server error." });
   }
 };
+
+exports.verify = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.status(200).json({ user });
+  } catch (err) {
+    console.error("Verify error:\n", err);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
