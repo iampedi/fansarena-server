@@ -2,7 +2,8 @@
 const mongoose = require("mongoose");
 
 // Get MongoDB connection URI from environment variables
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI =
+  process.env.MONGO_URI || "mongodb://localhost:27017/fans-arena";
 
 // Attempt to connect to the MongoDB database
 mongoose

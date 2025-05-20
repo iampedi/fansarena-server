@@ -1,5 +1,7 @@
+// models/Club.model.js
 const mongoose = require("mongoose");
 const { Schema, model } = mongoose;
+const slugify = require("slugify");
 
 const ClubSchema = new Schema(
   {
@@ -10,67 +12,67 @@ const ClubSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-
     slug: {
       type: String,
       unique: true,
       index: true,
     },
-
-    continent: {
+    logoUrl: {
       type: String,
-      lowercase: true,
-      required: true,
-      enum: [
-        "asia",
-        "europe",
-        "africa",
-        "north america",
-        "south america",
-        "oceania",
-      ],
     },
-
     country: {
       type: Schema.Types.ObjectId,
       ref: "Country",
       required: true,
     },
-
     city: {
       type: String,
       required: true,
-    },
-
-    stadium: {
-      type: String,
-      required: false,
       trim: true,
+      lowercase: true,
     },
-
     founded: {
       type: Number,
-      required: false,
+      min: 1800,
+      max: new Date().getFullYear(),
     },
-
-    founder: {
+    arena: {
       type: String,
-      required: false,
       trim: true,
     },
+    colors: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    website: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: (v) => /^https?:\/\/.+/.test(v),
+        message: "Website must be a valid URL",
+      },
+    },
+    achievements: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Winner",
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
 
+// Auto-generate slug & logoUrl
 ClubSchema.pre("save", function (next) {
   if (this.isModified("name")) {
-    this.slug = this.name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w\-]+/g, "");
+    this.slug = slugify(this.name, { lower: true, strict: true });
+  }
+  if (!this.logoUrl) {
+    this.logoUrl = `/images/clubs/${this.slug}.png`;
   }
   next();
 });
