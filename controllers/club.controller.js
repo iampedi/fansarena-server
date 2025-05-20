@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+const slugify = require("slugify");
 const Club = require("../models/Club.model");
 const Country = require("../models/Country.model");
 
@@ -53,17 +55,56 @@ exports.getAllClubs = async (req, res) => {
   }
 };
 
-// گرفتن یک باشگاه خاص
+// Get a specific club
 exports.getClubBySlug = async (req, res) => {
   try {
     const club = await Club.findOne({ slug: req.params.slug }).populate(
       "country",
-      "name code"
+      "name code continent"
     );
     if (!club) return res.status(404).json({ error: "Club not found" });
     res.json(club);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// Edit a specific club
+exports.updateClub = async (req, res) => {
+  try {
+    // ID validation
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "Invalid club ID" });
+    }
+
+    const allowedFields = [
+      "name",
+      "country",
+      "city",
+      "founded",
+      "arena",
+      "colors",
+      "website",
+    ];
+    const updates = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    if (updates.name) {
+      updates.slug = slugify(updates.name, { lower: true, strict: true });
+      updates.logoUrl = `/images/clubs/${updates.slug}.png`;
+    }
+
+    const updated = await Club.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    }).populate("country", "name code continent");
+
+    if (!updated) return res.status(404).json({ error: "Club not found" });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 };
 
@@ -75,19 +116,5 @@ exports.deleteClub = async (req, res) => {
     res.json({ message: "Club deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  }
-};
-
-// ویرایش باشگاه
-exports.updateClub = async (req, res) => {
-  try {
-    const updated = await Club.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!updated) return res.status(404).json({ error: "Club not found" });
-    res.json(updated);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
   }
 };
