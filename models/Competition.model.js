@@ -47,6 +47,29 @@ const CompetitionSchema = new Schema(
         return this.level === "domestic";
       },
     },
+    winners: [
+      {
+        club: {
+          type: Schema.Types.ObjectId,
+          ref: "Club",
+          required: true,
+        },
+        year: {
+          type: Number,
+          required: true,
+          min: 1800,
+          max: new Date().getFullYear(),
+        },
+        season: {
+          type: String,
+        },
+        rank: {
+          type: String,
+          enum: ["1st", "2nd", "3rd"],
+          required: true,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

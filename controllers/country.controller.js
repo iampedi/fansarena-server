@@ -1,3 +1,4 @@
+// controllers/country.controller.js
 const Country = require("../models/Country.model");
 
 exports.getAllCountries = async (req, res) => {

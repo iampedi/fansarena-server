@@ -1,3 +1,4 @@
+// controllers/club.controller.js
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 const Club = require("../models/Club.model");
@@ -7,9 +8,11 @@ const Country = require("../models/Country.model");
 exports.createClub = async (req, res) => {
   try {
     const club = await Club.create(req.body);
-    res.status(201).json(club);
+    // Populate country for frontend
+    const populatedClub = await club.populate("country", "name code continent");
+    res.status(201).json(populatedClub);
   } catch (err) {
-    // Check for duplicate key error
+    // Duplicate key error
     if (err.code === 11000) {
       return res.status(400).json({
         error: `${req.body.name} Club already exists.`,
@@ -35,7 +38,6 @@ exports.getAllClubs = async (req, res) => {
       query.country = country;
     } else if (continent) {
       const countries = await Country.find({ continent }).select("_id");
-
       if (!countries.length) {
         return res.json([]);
       }
@@ -55,7 +57,7 @@ exports.getAllClubs = async (req, res) => {
   }
 };
 
-// Get a specific club
+// Get a specific club by slug
 exports.getClubBySlug = async (req, res) => {
   try {
     const club = await Club.findOne({ slug: req.params.slug }).populate(
@@ -91,15 +93,27 @@ exports.updateClub = async (req, res) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
 
+    // Update slug & logo if name is changing
     if (updates.name) {
       updates.slug = slugify(updates.name, { lower: true, strict: true });
       updates.logoUrl = `/images/clubs/${updates.slug}.png`;
     }
 
-    const updated = await Club.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    }).populate("country", "name code continent");
+    let updated;
+    try {
+      updated = await Club.findByIdAndUpdate(req.params.id, updates, {
+        new: true,
+        runValidators: true,
+      }).populate("country", "name code continent");
+    } catch (err) {
+      // Handle duplicate key error for name
+      if (err.code === 11000) {
+        return res.status(400).json({
+          error: `${req.body.name} Club already exists.`,
+        });
+      }
+      throw err;
+    }
 
     if (!updated) return res.status(404).json({ error: "Club not found" });
     res.json(updated);
@@ -108,9 +122,12 @@ exports.updateClub = async (req, res) => {
   }
 };
 
-// حذف یک باشگاه
+// Delete a specific club
 exports.deleteClub = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "Invalid club ID" });
+    }
     const deleted = await Club.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: "Club not found" });
     res.json({ message: "Club deleted successfully" });

@@ -1,3 +1,4 @@
+// routes/countries.routes.js
 const express = require("express");
 const router = express.Router();
 const { getAllCountries } = require("../controllers/country.controller");
