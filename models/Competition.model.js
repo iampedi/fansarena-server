@@ -56,7 +56,6 @@ const CompetitionSchema = new Schema(
         },
         year: {
           type: Number,
-          required: true,
           min: 1800,
           max: new Date().getFullYear(),
         },
@@ -81,7 +80,7 @@ CompetitionSchema.pre("save", function (next) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
   if (!this.logoUrl) {
-    this.logoUrl = `/images/competitions/${this.slug}.png`;
+    this.logoUrl = `/images/competitions/${this.slug}.webp`;
   }
   next();
 });

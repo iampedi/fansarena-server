@@ -2,6 +2,7 @@
 const mongoose = require("mongoose");
 const Competition = require("../models/Competition.model");
 const Country = require("../models/Country.model");
+const slugify = require("slugify");
 
 // Create a competition
 exports.createCompetition = async (req, res) => {
@@ -15,7 +16,12 @@ exports.createCompetition = async (req, res) => {
     const competition = await Competition.create(data);
     res.status(201).json(competition);
   } catch (err) {
-    res.status(400).json({ err: err.message });
+    if (err.code === 11000) {
+      return res
+        .status(400)
+        .json({ error: "A competition with this name already exists." });
+    }
+    res.status(400).json({ error: err.message || "Submission failed" });
   }
 };
 
@@ -33,7 +39,6 @@ exports.getAllCompetitions = async (req, res) => {
     if (country) {
       query.country = country;
     } else if (continent) {
-      // Get all countries in the continent
       const countries = await Country.find({ continent }).select("_id");
       if (!countries.length) {
         return res.json([]);
@@ -46,10 +51,9 @@ exports.getAllCompetitions = async (req, res) => {
       query.level = level;
     }
 
-    // Populate country
     const competitions = await Competition.find(query).populate(
       "country",
-      "name code continent"
+      "name continent"
     );
 
     res.json(competitions);
@@ -63,9 +67,9 @@ exports.getCompetitionBySlug = async (req, res) => {
   try {
     const competition = await Competition.findOne({
       slug: req.params.slug,
-    }).populate("country", "name code continent");
+    }).populate("country", "name continent");
     if (!competition)
-      return res.status(404).json({ error: "Competition not found" });
+      return res.status(404).json({ error: "Competition Not Found." });
     res.json(competition);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -74,17 +78,70 @@ exports.getCompetitionBySlug = async (req, res) => {
 
 // Edit a specific competition
 exports.updateCompetition = async (req, res) => {
+  const allowedFields = ["name", "level", "continent", "country", "winners"];
+  const data = {};
+
+  allowedFields.forEach((f) => {
+    if (req.body[f] !== undefined) data[f] = req.body[f];
+  });
+
+  if (req.body.name) {
+    data.slug = slugify(req.body.name, { lower: true, strict: true });
+  }
+
   try {
-    const updated = await Competition.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
+    if (data.name) {
+      const duplicate = await Competition.findOne({
+        name: data.name,
+        slug: { $ne: req.params.slug },
+      });
+      if (duplicate) {
+        return res
+          .status(400)
+          .json({ error: "Competition name already exists." });
+      }
+    }
+    const updated = await Competition.findOneAndUpdate(
+      { slug: req.params.slug }, // درست شد
+      data,
+      {
+        new: true,
+        runValidators: true,
+      }
     );
     if (!updated)
-      return res.status(404).json({ error: "Competition not found" });
+      return res.status(404).json({ error: "Competition Not Found." });
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    // Duplicate name error
+    if (err.code === 11000) {
+      return res
+        .status(400)
+        .json({ error: "Competition name already exists." });
+    }
+
+    // Validation Error from mongoose (e.g., required, type, etc.)
+    if (err.name === "ValidationError") {
+      // جمع کردن همه پیام‌های خطا
+      const messages = Object.values(err.errors)
+        .map((e) => e.message)
+        .join(" | ");
+      return res.status(400).json({ error: messages });
+    }
+
+    // CastError (مثلاً مقدار country یا فیلد ObjectId اشتباه باشه)
+    if (err.name === "CastError") {
+      return res.status(400).json({
+        error: `Invalid value for field '${err.path}': ${err.value}`,
+      });
+    }
+
+    // خطاهای غیرمنتظره دیگر
+    // در حالت توسعه پیام واقعی خطا رو برگردون:
+    if (process.env.NODE_ENV !== "production") {
+      return res.status(500).json({ error: err.message });
+    }
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -93,8 +150,8 @@ exports.deleteCompetition = async (req, res) => {
   try {
     const deleted = await Competition.findByIdAndDelete(req.params.id);
     if (!deleted)
-      return res.status(404).json({ error: "Competition not found" });
-    res.json({ message: "Competition deleted successfully" });
+      return res.status(404).json({ error: "Competition Not Found." });
+    res.json({ message: "Competition Deleted Successfully." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
