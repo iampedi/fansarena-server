@@ -2,6 +2,7 @@
 const mongoose = require("mongoose");
 const Competition = require("../models/Competition.model");
 const Country = require("../models/Country.model");
+const Club = require("../models/Club.model");
 const slugify = require("slugify");
 
 // Create a competition
@@ -67,7 +68,9 @@ exports.getCompetitionBySlug = async (req, res) => {
   try {
     const competition = await Competition.findOne({
       slug: req.params.slug,
-    }).populate("country", "name continent");
+    })
+      .populate("country", "name continent")
+      .populate("winners", "club");
     if (!competition)
       return res.status(404).json({ error: "Competition Not Found." });
     res.json(competition);
@@ -87,6 +90,7 @@ exports.updateCompetition = async (req, res) => {
 
   if (req.body.name) {
     data.slug = slugify(req.body.name, { lower: true, strict: true });
+    data.logoUrl = `/images/competitions/${data.slug}.webp`;
   }
 
   try {
@@ -102,8 +106,13 @@ exports.updateCompetition = async (req, res) => {
       }
     }
     const updated = await Competition.findOneAndUpdate(
-      { slug: req.params.slug }, // درست شد
-      data,
+      { slug: req.params.slug },
+      {
+        ...data,
+        ...(req.body.level === "continental" && { country: null }),
+        ...(req.body.level === "global" && { continent: null, country: null }),
+        ...(req.body.level === "domestic" && { continent: null }),
+      },
       {
         new: true,
         runValidators: true,
@@ -153,6 +162,67 @@ exports.deleteCompetition = async (req, res) => {
       return res.status(404).json({ error: "Competition Not Found." });
     res.json({ message: "Competition Deleted Successfully." });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Add a winner
+exports.addWinner = async (req, res) => {
+  try {
+    const competition = await Competition.findById(req.params.competitionId);
+    if (!competition)
+      return res.status(404).json({ error: "Competition Not Found." });
+
+    const club = await Club.findById(req.body.club);
+    if (!club) return res.status(404).json({ error: "Club Not Found." });
+
+    const updated = await Competition.findByIdAndUpdate(
+      req.params.competitionId,
+      { $addToSet: { winners: req.body } },
+      { new: true }
+    );
+
+    if (!updated)
+      return res.status(404).json({ error: "Competition Not Found." });
+    res.json(updated);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete a winner
+exports.deleteWinner = async (req, res) => {
+  try {
+    const { competitionId, winnerId } = req.params;
+
+    // 1. لاگ ورودی‌ها
+    console.log("competitionId:", competitionId);
+    console.log("winnerId:", winnerId);
+
+    // 2. مقدار competition و winnersش رو قبل از حذف ببین
+    const competition = await Competition.findById(competitionId);
+    if (!competition) {
+      return res.status(404).json({ error: "Competition Not Found." });
+    }
+    console.log("before winners:", competition.winners);
+
+    // 3. حذف winner
+    const updated = await Competition.findByIdAndUpdate(
+      competitionId,
+      { $pull: { winners: { _id: new mongoose.Types.ObjectId(winnerId) } } },
+      { new: true }
+    );
+    if (!updated) {
+      return res.status(404).json({ error: "Competition Not Found." });
+    }
+
+    // 4. آرایه winners بعد از حذف
+    console.log("after winners:", updated.winners);
+
+    res.json(updated);
+  } catch (err) {
+    console.error("DELETE WINNER ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };

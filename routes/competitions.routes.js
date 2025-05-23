@@ -6,6 +6,8 @@ const {
   deleteCompetition,
   updateCompetition,
   getCompetitionBySlug,
+  addWinner,
+  deleteWinner,
 } = require("../controllers/competition.controller");
 
 // POST: /api/competitions
@@ -22,5 +24,11 @@ router.put("/:slug", updateCompetition);
 
 // DELETE: /api/competitions/:id
 router.delete("/:id", deleteCompetition);
+
+// PUT: /api/competitions/winners/:competitionId
+router.put("/winners/:competitionId", addWinner);
+
+// DELETE: /api/competitions/:competitionId/winners/:winnerId
+router.delete("/:competitionId/winners/:winnerId", deleteWinner);
 
 module.exports = router;
