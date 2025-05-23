@@ -10,7 +10,6 @@ const CompetitionSchema = new Schema(
       required: true,
       unique: true,
       trim: true,
-      lowercase: true,
     },
     slug: {
       type: String,

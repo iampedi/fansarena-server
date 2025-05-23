@@ -52,10 +52,9 @@ exports.getAllCompetitions = async (req, res) => {
       query.level = level;
     }
 
-    const competitions = await Competition.find(query).populate(
-      "country",
-      "name continent"
-    );
+    const competitions = await Competition.find(query)
+      .populate("country", "name continent")
+      .populate("winners.club", "slug");
 
     res.json(competitions);
   } catch (err) {
