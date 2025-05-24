@@ -54,12 +54,11 @@ const ClubSchema = new Schema(
         message: "Website must be a valid URL",
       },
     },
-    achievements: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Winner",
-      },
-    ],
+    trophies: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,

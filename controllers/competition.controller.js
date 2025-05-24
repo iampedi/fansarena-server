@@ -120,32 +120,53 @@ exports.updateCompetition = async (req, res) => {
     if (!updated)
       return res.status(404).json({ error: "Competition Not Found." });
     res.json(updated);
+
+    // Update trophies
+    if (updated && updated.winners && updated.winners.length > 0) {
+      const clubIds = [
+        ...new Set(updated.winners.map((w) => w.club.toString())),
+      ];
+
+      await Promise.all(
+        clubIds.map(async (clubId) => {
+          const allCompetitions = await Competition.find(
+            { "winners.club": clubId },
+            { winners: 1 }
+          );
+
+          let count = 0;
+          allCompetitions.forEach((comp) => {
+            comp.winners.forEach((winner) => {
+              if (winner.club.toString() === clubId) {
+                count++;
+              }
+            });
+          });
+
+          await Club.findByIdAndUpdate(clubId, { trophies: count });
+        })
+      );
+    }
   } catch (err) {
-    // Duplicate name error
     if (err.code === 11000) {
       return res
         .status(400)
         .json({ error: "Competition name already exists." });
     }
 
-    // Validation Error from mongoose (e.g., required, type, etc.)
     if (err.name === "ValidationError") {
-      // جمع کردن همه پیام‌های خطا
       const messages = Object.values(err.errors)
         .map((e) => e.message)
         .join(" | ");
       return res.status(400).json({ error: messages });
     }
 
-    // CastError (مثلاً مقدار country یا فیلد ObjectId اشتباه باشه)
     if (err.name === "CastError") {
       return res.status(400).json({
         error: `Invalid value for field '${err.path}': ${err.value}`,
       });
     }
 
-    // خطاهای غیرمنتظره دیگر
-    // در حالت توسعه پیام واقعی خطا رو برگردون:
     if (process.env.NODE_ENV !== "production") {
       return res.status(500).json({ error: err.message });
     }
