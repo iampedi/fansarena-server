@@ -20,6 +20,7 @@ app.use("/api/countries", require("./routes/countries.routes"));
 app.use("/api/cities", require("./routes/cities.routes"));
 app.use("/api/clubs", require("./routes/clubs.routes"));
 app.use("/api/competitions", require("./routes/competitions.routes"));
+app.use("/api/users", require("./routes/user.routes"));
 
 // Centralized error handling and 404 fallback
 require("./error-handling")(app);

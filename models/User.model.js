@@ -20,9 +20,13 @@ const UserSchema = new Schema(
       type: String,
       required: true,
     },
+    continent: {
+      type: String,
+      trim: true,
+    },
     country: {
-      type: Schema.Types.ObjectId,
-      ref: "Country",
+      type: String,
+      trim: true,
     },
     city: {
       type: String,
@@ -37,17 +41,9 @@ const UserSchema = new Schema(
       default: false,
     },
     favoriteClubs: {
-      type: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: "Club",
-        },
-      ],
-      validate: {
-        validator: function (val) {
-          return val.length <= 2;
-        },
-        message: "You can only choose up to 2 favorite clubs.",
+      type: {
+        type: Schema.Types.ObjectId,
+        ref: "Club",
       },
     },
   },
