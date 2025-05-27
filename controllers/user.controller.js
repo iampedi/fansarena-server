@@ -2,6 +2,16 @@
 const User = require("../models/User.model");
 const Club = require("../models/Club.model");
 
+// Get All Users
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Get a specific user
 exports.getUserById = async (req, res) => {
   try {

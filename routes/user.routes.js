@@ -1,9 +1,17 @@
+// routes/user.routes.js
 const express = require("express");
 const router = express.Router();
-const { getUserById, updateUser } = require("../controllers/user.controller");
+const {
+  getUserById,
+  updateUser,
+  getAllUsers,
+} = require("../controllers/user.controller");
 const { authenticate } = require("../middleware/auth");
 
-// // GET: /api/users/:id
+// GET: /api/users
+router.get("/", getAllUsers);
+
+// GET: /api/users/:id
 router.get("/:id", getUserById);
 
 // PUT: /api/users/:id
