@@ -1,5 +1,6 @@
 // controllers/user.controller.js
 const User = require("../models/User.model");
+const Club = require("../models/Club.model");
 
 // Get a specific user
 exports.getUserById = async (req, res) => {
@@ -15,12 +16,44 @@ exports.getUserById = async (req, res) => {
 // Updete a specific user
 exports.updateUser = async (req, res) => {
   try {
+    // مرحله 1: کاربر قبلی رو پیدا کن تا باشگاه قبلیش رو بدونی
+    const existingUser = await User.findById(req.params.id);
+    if (!existingUser)
+      return res.status(404).json({ error: "User not found." });
+
+    const previousClubSlug = existingUser.favoriteClub;
+    const newClubSlug = req.body.favoriteClub;
+
+    // مرحله 2: آپدیت اطلاعات کاربر
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-    if (!updatedUser) return res.status(404).json({ error: "User not found." });
+
+    // مرحله 3: اگر باشگاه تغییر کرده بود، fans رو مدیریت کن
+    if (newClubSlug && newClubSlug !== previousClubSlug) {
+      // کاهش fans از باشگاه قبلی (اگه وجود داشت)
+      if (previousClubSlug) {
+        await Club.findOneAndUpdate(
+          { slug: previousClubSlug },
+          { $inc: { fans: -1 } }
+        );
+        console.log(`⬇️ Removed fan from: ${previousClubSlug}`);
+      }
+
+      // افزایش fans به باشگاه جدید
+      await Club.findOneAndUpdate(
+        { slug: newClubSlug },
+        { $inc: { fans: 1 } },
+        { new: true, upsert: false }
+      );
+      console.log(`⬆️ Added fan to: ${newClubSlug}`);
+    }
+
     res.json(updatedUser);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("🔥 updateUser error:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
   }
 };

@@ -59,6 +59,11 @@ const ClubSchema = new Schema(
       default: 0,
       min: 0,
     },
+    fans: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,

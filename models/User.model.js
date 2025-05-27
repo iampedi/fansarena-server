@@ -40,11 +40,10 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    favoriteClubs: {
-      type: {
-        type: Schema.Types.ObjectId,
-        ref: "Club",
-      },
+    favoriteClub: {
+      type: String,
+      unique: true,
+      trim: true,
     },
   },
   {
