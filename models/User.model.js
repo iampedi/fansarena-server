@@ -42,7 +42,6 @@ const UserSchema = new Schema(
     },
     favoriteClub: {
       type: String,
-      unique: true,
       trim: true,
     },
   },
