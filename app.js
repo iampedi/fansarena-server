@@ -1,3 +1,4 @@
+// app.js
 // Load environment variables from .env file into process.env
 require("dotenv").config();
 
@@ -11,6 +12,9 @@ const app = express();
 
 // Apply global middleware configuration (e.g., logger, body parser, CORS)
 require("./config")(app);
+
+// Define root route
+app.use("/api", require("./routes/general.routes"));
 
 // Define AUTH routes
 app.use("/auth", require("./routes/auth.routes"));
