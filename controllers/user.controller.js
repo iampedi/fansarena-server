@@ -26,7 +26,7 @@ exports.getUserById = async (req, res) => {
 // Updete a specific user
 exports.updateUser = async (req, res) => {
   try {
-    // مرحله 1: کاربر قبلی رو پیدا کن تا باشگاه قبلیش رو بدونی
+    // Find the existing user
     const existingUser = await User.findById(req.params.id);
     if (!existingUser)
       return res.status(404).json({ error: "User not found." });
@@ -34,14 +34,14 @@ exports.updateUser = async (req, res) => {
     const previousClubSlug = existingUser.favoriteClub;
     const newClubSlug = req.body.favoriteClub;
 
-    // مرحله 2: آپدیت اطلاعات کاربر
+    // Update the user document
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
 
-    // مرحله 3: اگر باشگاه تغییر کرده بود، fans رو مدیریت کن
+    // If the favoriteClub has changed manage fans
     if (newClubSlug && newClubSlug !== previousClubSlug) {
-      // کاهش fans از باشگاه قبلی (اگه وجود داشت)
+      // Decrease fans from the previous club if exists
       if (previousClubSlug) {
         await Club.findOneAndUpdate(
           { slug: previousClubSlug },
@@ -50,7 +50,7 @@ exports.updateUser = async (req, res) => {
         console.log(`⬇️ Removed fan from: ${previousClubSlug}`);
       }
 
-      // افزایش fans به باشگاه جدید
+      // Increase fans to the new club
       await Club.findOneAndUpdate(
         { slug: newClubSlug },
         { $inc: { fans: 1 } },
@@ -65,5 +65,26 @@ exports.updateUser = async (req, res) => {
     if (!res.headersSent) {
       res.status(500).json({ error: err.message });
     }
+  }
+};
+
+// Delete a specific user
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found." });
+
+    const clubSlug = user.favoriteClub;
+
+    await User.findByIdAndDelete(req.params.id);
+
+    if (clubSlug) {
+      await Club.findOneAndUpdate({ slug: clubSlug }, { $inc: { fans: -1 } });
+      console.log(`⬇️ Removed fan from club after user deletion: ${clubSlug}`);
+    }
+
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

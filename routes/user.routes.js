@@ -5,8 +5,8 @@ const {
   getUserById,
   updateUser,
   getAllUsers,
+  deleteUser,
 } = require("../controllers/user.controller");
-const { authenticate } = require("../middleware/auth");
 
 // GET: /api/users
 router.get("/", getAllUsers);
@@ -16,5 +16,8 @@ router.get("/:id", getUserById);
 
 // PUT: /api/users/:id
 router.put("/:id", updateUser);
+
+// DELETE: /api/users/:id
+router.delete("/:id", deleteUser);
 
 module.exports = router;

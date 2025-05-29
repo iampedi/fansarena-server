@@ -52,9 +52,21 @@ exports.signUp = async (req, res) => {
       role: "user",
     });
 
+    const payload = {
+      userId: newUser._id,
+      email: newUser.email,
+      role: newUser.role,
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+      algorithm: "HS256",
+    });
+
     // Build response object without password
     res.status(201).json({
       message: "User registered successfully.",
+      token,
       user: {
         _id: newUser._id,
         email: newUser.email,
